@@ -16,6 +16,7 @@ module DiaryLog
     
     def parse
       a = @source.split(/\n/).map{|line| line.strip }.reject{|line| line.size == 0}
+      
       first = a.shift
       
       m = first.match(/(?<year>\d+)\-(?<month>\d+)\-(?<day>\d+)/)
@@ -31,6 +32,10 @@ module DiaryLog
       a.reverse.each do |line|
         time, desc = line.split(' ', 2)
         hour, minute = time.split(':', 2)
+        
+        if desc.nil?
+          p "???" + line
+        end
         
         r = Record.new(@date, hour, minute, desc)
         

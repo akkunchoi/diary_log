@@ -7,7 +7,7 @@ require 'diary_log'
 path = "/Users/akiyoshi/Dropbox/PlainText/log %date%.txt"
 
 day = Date.today
-n = 30
+n = 50
 day = day - n + 1
 
 records = []
@@ -17,13 +17,18 @@ n.times do
   if File.exists?(filepath)
 
     source = IO.read(filepath)
+    source = source.gsub(" ", " ") # c2a0 to 20
     records = records + DiaryLog::Parser.new(source).parse.records
     
   end
   day = day + 1
 end
 
-events = DiaryLog::EventDetector.new([{:s => /寝た/, :e => /起きた/, :title => "睡眠時間"}]).detect(records)
+records.each do |r|
+#  p r.pretty_str
+end
+
+events = DiaryLog::EventDetector.new([{:s => /寝[たる]/, :e => /起きた/, :title => "睡眠時間"}]).detect(records)
 sum = 0
 events.each do |event|
   p event.start_datetime.strftime("%Y-%m-%d %H:%M") + " " + event.end_datetime.strftime("%Y-%m-%d %H:%M")
