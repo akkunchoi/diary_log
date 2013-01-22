@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-
+#
+# usage:
+#   ruby main.rb "/path/to/dir/%date%"
+# 
 $:.push File.expand_path("../lib", __FILE__)
 
 require 'diary_log'
 
-path = "/Users/akiyoshi/Dropbox/PlainText/log %date%.txt"
+path = ARGV[0]
 
 day = Date.today
 n = 50
