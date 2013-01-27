@@ -2,7 +2,7 @@
 
 module DiaryLog
   class Event
-    attr_reader :title
+    attr_reader :title, :start_record, :end_record
     def initialize(title, start_record, end_record)
       @title = title
       @start_record = start_record

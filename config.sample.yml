@@ -1,0 +1,18 @@
+# -*- coding: utf-8 -*-
+
+path: "/path/to/log %date%.txt" 
+
+patterns:
+  sleep:
+    s: 寝[たる]
+    e: 起きた
+    
+  slobbed:
+    e: だらだら
+
+  project1:
+    e: project1
+  
+  project2:
+    e: project2
+  

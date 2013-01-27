@@ -34,7 +34,8 @@ module DiaryLog
         hour, minute = time.split(':', 2)
         
         if desc.nil?
-          p "???" + line
+          # no desc
+          next
         end
         
         r = Record.new(@date, hour, minute, desc)
