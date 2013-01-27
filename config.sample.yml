@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
-path: "/path/to/log %date%.txt" 
+path: "./sample/%date%.txt" 
+period:
+  day_since: "2013-01-01"
+  day_until: "2013-01-31"
+  # day_ago: 10
 
 patterns:
   sleep:

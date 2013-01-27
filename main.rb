@@ -8,17 +8,30 @@ $:.push File.expand_path("../lib", __FILE__)
 
 require 'diary_log'
 require 'yaml'
+require 'date'
 
 config = YAML.load_file("config.yml")
 
 path = config["path"]
 
-day = Date.today
-n = config["day"]
-day = day - n + 1
+if !config["period"]["day_ago"].nil?
+  day_end = Date.today
+  day_start = day_end - config["period"]["day_ago"] + 1
+elsif !config["period"]["day_since"].nil? && !config["period"]["day_until"].nil?
+  day_start = Date.strptime(config["period"]["day_since"], "%Y-%m-%d") 
+  day_end = Date.strptime(config["period"]["day_until"], "%Y-%m-%d") 
+end
+
+if day_start.nil? || day_end.nil?
+  puts "Please specify day_ago or (day_since and day_until)"
+  exit 1
+end
+
+puts day_start.to_s + " to " + day_end.to_s
 
 records = []
-n.times do 
+day = day_start
+while day <= day_end do
   filepath = path.sub('%date%', day.to_s)
 
   if File.exists?(filepath)
@@ -62,7 +75,7 @@ config["patterns"].each do |(title, options)|
 end
 
 puts ""
-puts "## Rest of records"
+puts "## The rest of records"
 puts ""
 
 rest.each do |r|
