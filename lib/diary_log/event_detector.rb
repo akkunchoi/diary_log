@@ -13,6 +13,7 @@ module DiaryLog
       now_start_record = nil
       prev = nil
       records.each do |r|
+        next if r.all_day
         @patterns.each_with_index do |pattern, i|
           if !pattern[:s].nil? && !pattern[:e].nil? # s, e両方
             if !now_event.nil? && now_event[:e].match(r.desc)

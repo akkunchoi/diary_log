@@ -1,14 +1,14 @@
 module DiaryLog
   class Record
-    WHOLE_DAY = '*'
-    attr_reader :date, :hour, :minute, :whole_day, :desc
+    ALL_DAY = '*'
+    attr_reader :date, :hour, :minute, :all_day, :desc
 
     def initialize(date, hour, minute, desc)
       @date = date
-      if hour == WHOLE_DAY
-        @whole_day = true
+      if hour == ALL_DAY
+        @all_day = true
       else
-        @whole_day = false
+        @all_day = false
         @hour = hour.to_i
         @minute = minute.to_i unless minute.nil?
       end
@@ -33,12 +33,12 @@ module DiaryLog
     end
     
     def time_str
-      if @whole_day
-        return WHOLE_DAY
+      if @all_day
+        return ALL_DAY
       end
       
       if @minute.nil?
-        return @hour.to_s + ':' + WHOLE_DAY
+        return @hour.to_s + ':' + ALL_DAY
       end
       
       sprintf("%02d:%02d", @hour, @minute)
@@ -64,7 +64,7 @@ module DiaryLog
       return a unless a == 0
       
       # 全日イベントは比較しないようにしたいが
-      if @whole_day || other.whole_day
+      if @all_day || other.all_day
         return 0
       end
       
