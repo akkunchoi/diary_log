@@ -29,30 +29,31 @@ module DiaryLog
     end
     
     def patterns
-      @config['patterns']
+      @config['patterns'].map do |(id, params)|
+        params[:id] = id
+        DiaryLog::Pattern.new(params)
+      end
     end
     
     def run
       records = build_records(input)
 
+      # イベントとして使われなかったレコードを知りたい
       rest = records.clone
 
-      patterns.each do |(title, options)|
-        e = {:title => title}
-        e[:s] = Regexp.new(options["s"]) if !options["s"].nil?
-        e[:e] = Regexp.new(options["e"]) if !options["e"].nil?
-        events = DiaryLog::EventDetector.new([e]).detect(records)
+      patterns.each do |pattern|
+        events = pattern.detect(records)
 
         events.each do |event|
           rest.delete(event.end_record)
-          if !e[:s].nil?
+          if pattern.params[:s]
             rest.delete(event.start_record)
           end
         end
         
         next if events.size == 0
 
-        show_events(title, events)
+        show_events(pattern.params[:id], events)
       end
 
       show_rest_records(rest)
