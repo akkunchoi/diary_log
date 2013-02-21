@@ -19,16 +19,16 @@ module DiaryLog
       date = @date
       hour = @hour
       if hour.nil?
-        return DateTime.new(date.year, date.month, date.day)
+        return Time.local(date.year, date.month, date.day)
       end
       if hour >= 24
         date = date + 1
         hour = hour - 24
       end
       if @minute.nil?
-        return DateTime.new(date.year, date.month, date.day, hour)
+        return Time.local(date.year, date.month, date.day, hour)
       else
-        return DateTime.new(date.year, date.month, date.day, hour, @minute)
+        return Time.local(date.year, date.month, date.day, hour, @minute)
       end
     end
     

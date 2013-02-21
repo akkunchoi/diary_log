@@ -29,8 +29,8 @@ module DiaryLog
     end
     
     def patterns
-      @config['patterns'].map do |(id, params)|
-        params[:id] = id
+      @config[:patterns].map do |params|
+        params = params.symbolize_keys_recursive
         DiaryLog::Pattern.new(params)
       end
     end
@@ -51,23 +51,33 @@ module DiaryLog
           end
         end
         
-        next if events.size == 0
+        # next if events.size == 0
 
-        show_events(pattern.params[:id], events)
+        show_events(pattern, events)
+        
+        if @config[:gcal][:insert]
+          insert_into_gcal(pattern, events)
+        end
+        
       end
 
       show_rest_records(rest)
       
     end
     
-    def show_events(title, events)
+    def show_events(pattern, events)
       puts ""
-      puts "## #{title}"
+      puts "## #{pattern.name}"
       puts ""
 
       sum = 0
       events.each do |event|
-        puts event.start_datetime.strftime("%Y-%m-%d %H:%M") + " " + event.end_datetime.strftime("%Y-%m-%d %H:%M") + " " + event.end_record.desc
+        puts [
+          event.start_time.strftime("%Y-%m-%d %H:%M"), 
+          event.end_time.strftime("%Y-%m-%d %H:%M"),
+          "(" + event.duration_by_hour.to_s + " h)",
+          event.end_record.desc
+          ].join(' ')
         sum = sum + event.duration_by_hour
       end
       puts "Total: " + (((sum*100).round)/100.0).to_s + " hours"
@@ -83,17 +93,31 @@ module DiaryLog
       end      
     end
     
+    def insert_into_gcal(pattern, events)
+      events.each do |event|
+        if gcal.create_event(pattern, event)
+          puts "The event '" + event.end_record.desc + "' was created on gcal."
+        end
+      end
+    end
+    
+    def gcal
+      @gcal = @gcal || DiaryLog::Gcal.new(
+        @config[:gcal].merge({:basepath => @config[:root]})
+      )
+    end
+    
     
     protected
     def input
       config = @config
       
-      if !config["period"]["day_ago"].nil?
+      if !config[:period][:day_ago].nil?
         day_end = Date.today
-        day_start = day_end - config["period"]["day_ago"] + 1
-      elsif !config["period"]["day_since"].nil? && !config["period"]["day_until"].nil?
-        day_start = Date.strptime(config["period"]["day_since"], "%Y-%m-%d") 
-        day_end = Date.strptime(config["period"]["day_until"], "%Y-%m-%d") 
+        day_start = day_end - config[:period][:day_ago] + 1
+      elsif !config[:period][:day_since].nil? && !config[:period][:day_until].nil?
+        day_start = Date.strptime(config[:period][:day_since], "%Y-%m-%d") 
+        day_end = Date.strptime(config[:period][:day_until], "%Y-%m-%d") 
       end
 
       if day_start.nil? || day_end.nil?
@@ -102,7 +126,7 @@ module DiaryLog
       end
       puts day_start.to_s + " to " + day_end.to_s
       
-      return {:day_start => day_start, :day_end => day_end, :path => config['path']}
+      return {:day_start => day_start, :day_end => day_end, :path => config[:path]}
     end
     
     

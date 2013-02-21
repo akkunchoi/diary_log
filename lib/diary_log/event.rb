@@ -9,16 +9,18 @@ module DiaryLog
       @end_record = end_record
     end
     
-    def start_datetime
+    def start_time
       @start_record.datetime
     end
     
-    def end_datetime
+    def end_time
       @end_record.datetime
     end
     
     def duration_by_hour
-      (end_datetime.to_time - start_datetime.to_time) / 3600
+      a = (end_time - start_time) / 3600
+      (((a*100).round)/100.0)
     end
+    
   end
 end

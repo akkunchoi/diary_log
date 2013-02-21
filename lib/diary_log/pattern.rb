@@ -5,9 +5,12 @@ module DiaryLog
     attr_reader :params
     
     def initialize(params)
-      params[:s] = Regexp.new(params["s"]) if !params["s"].nil?
-      params[:e] = Regexp.new(params["e"]) if !params["e"].nil?
+      params[:s] = Regexp.new(params[:s]) if !params[:s].nil?
+      params[:e] = Regexp.new(params[:e]) if !params[:e].nil?
       @params = params
+    end
+    def name
+      params[:name]
     end
     def match(r)
       if params[:s].match(r.desc)
@@ -50,7 +53,7 @@ module DiaryLog
         def match(r)
           params = @pattern.params
           if @now_record && params[:e].match(r.desc)
-            event = Event.new(params[:id], @now_record, r)
+            event = Event.new(@pattern.name, @now_record, r)
             @now_record = nil
             return event
           end
@@ -65,7 +68,7 @@ module DiaryLog
         def match(r)
           params = @pattern.params
           if params[:e].match(r.desc)
-            event = Event.new(params[:id], @prev, r)
+            event = Event.new(@pattern.name, @prev, r)
             @prev = r
             return event
           end
