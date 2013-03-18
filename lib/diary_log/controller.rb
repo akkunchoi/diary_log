@@ -61,7 +61,9 @@ module DiaryLog
         
       end
 
-      show_rest_records(rest)
+      if @config[:show_rests] 
+        show_rest_records(rest)
+      end
       
     end
     
