@@ -44,13 +44,6 @@ module DiaryLog
       sprintf("%02d:%02d", @hour, @minute)
     end
 
-    def space(str, n)
-      if str.size < n
-        return str + " " * (n - str.size)
-      end
-      str
-    end
-    
     def pretty_str
       date.strftime("%Y-%m-%d") + " " + space(time_str, 5) + " " + desc
     end
@@ -81,6 +74,15 @@ module DiaryLog
     def < (other)
       (self <=> other) == -1
     end
+    
+    private
+    def space(str, n)
+      if str.size < n
+        return str + " " * (n - str.size)
+      end
+      str
+    end
+    
   end
 end
 

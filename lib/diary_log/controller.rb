@@ -10,6 +10,8 @@ module DiaryLog
       day_end = options[:day_end]
       path = options[:path]
       
+      parser = DiaryLog::Parser.new
+      
       records = []
       day = day_start
       while day <= day_end do
@@ -19,7 +21,7 @@ module DiaryLog
 
           source = IO.read(filepath)
           source = source.gsub(" ", " ") # c2a0 to 20
-          records = records + DiaryLog::Parser.new(source).parse.records
+          records = records + parser.parse(source)
 
         end
         day = day + 1
@@ -37,6 +39,10 @@ module DiaryLog
     
     def run
       records = build_records(input)
+
+      if @config[:show_records] 
+        show_records(records)
+      end
 
       # イベントとして使われなかったレコードを知りたい
       rest = records.clone
@@ -76,15 +82,25 @@ module DiaryLog
       events.each do |event|
         puts [
           event.start_time.strftime("%Y-%m-%d %H:%M"), 
-          event.end_time.strftime("%Y-%m-%d %H:%M"),
+          event.end_time.nil? ? '' : event.end_time.strftime("%Y-%m-%d %H:%M"),
           "(" + event.duration_by_hour.to_s + " h)",
-          event.end_record.desc
+          event.end_time.nil? ? event.start_record.desc : event.end_record.desc
           ].join(' ')
         sum = sum + event.duration_by_hour
       end
       puts "Total: " + (((sum*100).round)/100.0).to_s + " hours"
     end
     
+    def show_records(records)
+      puts ""
+      puts "## records"
+      puts ""
+
+      records.each do |r|
+        p r.datetime.strftime("%Y-%m-%d %H:%M") + " " + r.desc
+      end      
+    end
+
     def show_rest_records(records)
       puts ""
       puts "## The rest of records"
@@ -98,7 +114,7 @@ module DiaryLog
     def insert_into_gcal(pattern, events)
       events.each do |event|
         if gcal.create_event(pattern, event)
-          puts "The event '" + event.end_record.desc + "' was created on gcal."
+          puts "The event '" + event.desc + "' was created on gcal."
         end
       end
     end

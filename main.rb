@@ -40,8 +40,11 @@ require 'active_support'
 opt = OptionParser.new
 
 opt.on('--gcal-insert') {|v| config[:gcal][:insert] = true }
+opt.on('--gcal-insert-dry-run') {|v| config[:gcal][:insert_dry_run] = true}
 opt.on('--day-ago NUM') {|v| config[:period][:day_ago] = v }
 opt.on('--show-rests') {|v| config[:show_rests] = true}
+opt.on('--show-records') {|v| config[:show_records] = true}
+opt.on('--show-events') {|v| config[:show_events] = true}
 opt.on('--last-week [WEEK]') do |v| 
   v = 1 if v.nil? || v == ""
   v = Integer(v)

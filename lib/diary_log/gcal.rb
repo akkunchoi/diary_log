@@ -68,6 +68,7 @@ module DiaryLog
         storage.save(access_token)
       end
 
+      @dry_run = !!options[:insert_dry_run]
     end
     
     # Return Google::APIClient::Schema::Calendar::V3::Event
@@ -78,39 +79,75 @@ module DiaryLog
       end
       
       # 重複してないか調べる
-      events = list_events(calendar_id, event.start_time, event.end_time)
+      events = list_gcal_events(calendar_id, event)
       
       if events.size > 0
 #        puts "The event #{event.end_record.desc} has already created."
         return false
       end
       
-      g_event = {
-        'summary' => event.title,
-        'start' => {
-          'dateTime' => event.start_time.to_datetime.rfc3339,
-        },
-        'end' => {
-          'dateTime' => event.end_time.to_datetime.rfc3339
-        },
-        'description' => event.end_record.desc
-      }
-      @client.execute(
-        :api_method => service.events.insert,
-        :parameters => {'calendarId' => calendar_id},
-        :body => JSON.dump(g_event),
-        :headers => {'Content-Type' => 'application/json'}
-      )
+      if event.end_time.nil?
+        g_event = {
+          'summary' => event.desc,
+          'start' => {
+            'date' => event.start_time.strftime("%Y-%m-%d"),
+          },
+          'end' => {
+            'date' => event.start_time.strftime("%Y-%m-%d"),
+          },
+          'description' => ''
+        }
+      else
+        g_event = {
+          'summary' => event.title,
+          'start' => {
+            'dateTime' => event.start_time.to_datetime.rfc3339,
+          },
+          'end' => {
+            'dateTime' => event.end_time.to_datetime.rfc3339
+          },
+          'description' => event.desc
+        }
+      end
+      
+      if @dry_run
+        p g_event
+        return nil
+      else
+        @client.execute(
+          :api_method => service.events.insert,
+          :parameters => {'calendarId' => calendar_id},
+          :body => JSON.dump(g_event),
+          :headers => {'Content-Type' => 'application/json'}
+        )
+      end
     end
     
     # Return Array<Google::APIClient::Schema::Calendar::V3::Event>
-    def list_events(calendar_id, from, to, exclude_all_day = true)
-      params = {
-        'calendarId' => calendar_id,
-        'timeMin' => from.to_datetime.rfc3339,
-        'timeMax' => to.to_datetime.rfc3339,
-        'maxResults' => 20
-      }
+    def list_gcal_events(calendar_id, event)
+      
+      all_day = event.end_time.nil?
+      
+      if all_day
+        date = event.start_time
+        from = Time.local(date.year, date.month, date.day, 0, 0, 0)
+        to = Time.local(date.year, date.month, date.day, 23, 59, 59)
+        params = {
+          'calendarId' => calendar_id,
+          'timeMin' => from.to_datetime.rfc3339,
+          'timeMax' => to.to_datetime.rfc3339,
+          'maxResults' => 20
+        }
+      else
+        from = event.start_time
+        to = event.end_time
+        params = {
+          'calendarId' => calendar_id,
+          'timeMin' => from.to_datetime.rfc3339,
+          'timeMax' => to.to_datetime.rfc3339,
+          'maxResults' => 20
+        }
+      end
       
       page_token = nil
       result = @client.execute(
@@ -118,9 +155,9 @@ module DiaryLog
         :parameters => params
       )
 
-      events = []
+      gcal_events = [] # DiaryLog::Eventじゃないよ、Calendarだよ
       while true
-        events.concat(result.data.items)
+        gcal_events.concat(result.data.items)
         
         if !(page_token = result.data.next_page_token)
           break
@@ -131,13 +168,14 @@ module DiaryLog
           :parameters => params.merge({'pageToken' => page_token})
         )
       end
-      if exclude_all_day
-#        events.reject!{|e| e['start']['datetime'].nil? || e['end']['datetime'].nil? }
-        events.reject!{|e| e.start.date_time.nil? }
-      end
-      #pp events
       
-      return events
+      if all_day
+        gcal_events.reject!{|e| e.start.date.nil? }
+      else
+        gcal_events.reject!{|e| e.start.date_time.nil? }
+      end
+      
+      return gcal_events
     end
     
     protected
