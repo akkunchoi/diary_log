@@ -38,7 +38,11 @@ module DiaryLog
     end
     
     def run
-      records = build_records(input)
+      
+      day_option = input
+      puts "#{day_option[:day_start]} to #{day_option[:day_end]}"
+      
+      records = build_records(day_option)
 
       if @config[:show_records] 
         show_records(records)
@@ -57,16 +61,26 @@ module DiaryLog
           end
         end
         
-        # next if events.size == 0
+       next if events.size == 0
 
-        show_events(pattern, events)
+        unless @config[:analysis]
+          show_events(pattern, events)
+        end
         
         if @config[:gcal][:insert]
           insert_into_gcal(pattern, events)
         end
         
+        if @config[:analysis]
+          analyze_events(pattern, events)
+        end
+        
       end
 
+      if @config[:analysis]
+        analyze_events_result
+      end
+        
       if @config[:show_rests] 
         show_rest_records(rest)
       end
@@ -119,6 +133,43 @@ module DiaryLog
       end
     end
     
+    def analyze_events(pattern, events)
+      @events = @events || {}
+      @events[pattern.name] = (@events[pattern.name] || []) + events
+    end
+    def analyze_events_result
+      unit = @config[:analysis][:unit]
+      
+      puts "------------------------------------"
+      @events.each do |name, events|
+        next if events.size == 0
+        puts ""
+        puts "## #{name}"
+        puts ""
+#        puts "#{events.size} events."
+        
+        #区切り開始日
+        span = input[:day_start]
+        case unit
+        when "week"; span = span.__send__("beginning_of_#{unit}", :sunday)
+        when "month"; span = span.__send__("beginning_of_#{unit}")
+        end
+        sum = 0
+        events.each do |event|
+          if event.start_time >= span
+            prev = span.__send__("prev_#{unit}")
+            day = span - prev
+            puts sprintf("%s to %s % 6.1fh (% 5.1fh )  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
+            while event.start_time >= span
+              span = span.__send__("next_#{unit}")
+            end
+            sum = 0
+          end
+          sum = sum + event.duration_by_hour
+        end
+      end
+    end
+    
     def gcal
       @gcal = @gcal || DiaryLog::Gcal.new(
         @config[:gcal].merge({:basepath => @config[:root]})
@@ -142,7 +193,6 @@ module DiaryLog
         puts "Please specify day_ago or (day_since and day_until)"
         exit 1
       end
-      puts day_start.to_s + " to " + day_end.to_s
       
       return {:day_start => day_start, :day_end => day_end, :path => config[:path]}
     end

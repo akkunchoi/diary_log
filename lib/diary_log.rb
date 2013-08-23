@@ -45,6 +45,7 @@ module DiaryLog
       opt.on('--show-rests') {|v| config[:show_rests] = true}
       opt.on('--show-records') {|v| config[:show_records] = true}
       opt.on('--show-events') {|v| config[:show_events] = true}
+      opt.on('--analyze') {|v| config[:analyze] = true}
       opt.on('--last-week [WEEK]') do |v| 
         v = 1 if v.nil? || v == ""
         v = Integer(v)
