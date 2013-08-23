@@ -155,17 +155,34 @@ module DiaryLog
         when "month"; span = span.__send__("beginning_of_#{unit}")
         end
         sum = 0
+        d = 0
         events.each do |event|
           if event.start_time >= span
             prev = span.__send__("prev_#{unit}")
             day = span - prev
             puts sprintf("%s to %s % 6.1fh (% 5.1fh )  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
+            puts sprintf("         % 6.1fh             %s", d, "*" * d.to_i) if d > 0
             while event.start_time >= span
               span = span.__send__("next_#{unit}")
             end
             sum = 0
+            d = 0
           end
           sum = sum + event.duration_by_hour
+          
+          # daylight check
+          if name == 'sleep'
+            st = event.start_time
+            sunrise = st.change(:hour => 7, :min => 0, :sec => 0)
+            et = event.end_time
+            sunset = st.change(:hour => 19, :min => 0, :sec => 0)
+            if st <= sunrise && sunrise <= et
+              d = d + ((et - sunrise)/3600)
+            end
+            if st <= sunset && sunset <= et
+              d = d + ((sunset - st)/3600)
+            end
+          end
         end
       end
     end
