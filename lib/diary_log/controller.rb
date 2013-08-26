@@ -60,10 +60,11 @@ module DiaryLog
             rest.delete(event.start_record)
           end
         end
-        
-       next if events.size == 0
+       
+        # bug
+       #next if events.size == 0
 
-        unless @config[:analysis]
+        unless @config[:analyze]
           show_events(pattern, events)
         end
         
@@ -71,13 +72,13 @@ module DiaryLog
           insert_into_gcal(pattern, events)
         end
         
-        if @config[:analysis]
+        if @config[:analyze]
           analyze_events(pattern, events)
         end
         
       end
 
-      if @config[:analysis]
+      if @config[:analyze]
         analyze_events_result
       end
         
@@ -137,6 +138,14 @@ module DiaryLog
       @events = @events || {}
       @events[pattern.name] = (@events[pattern.name] || []) + events
     end
+    
+    # weekの場合は :sunday を渡すのを透過的にしたい
+    def date_at(method, unit, date)
+      case unit
+      when "week"; date.__send__("#{method.to_s}_#{unit}", :sunday)
+      when "month"; date.__send__("#{method.to_s}_#{unit}")
+      end
+    end
     def analyze_events_result
       unit = @config[:analysis][:unit]
       
@@ -150,24 +159,39 @@ module DiaryLog
         
         #区切り開始日
         span = input[:day_start]
-        case unit
-        when "week"; span = span.__send__("beginning_of_#{unit}", :sunday)
-        when "month"; span = span.__send__("beginning_of_#{unit}")
-        end
+        span = date_at(:beginning_of, unit, span)
         sum = 0
         d = 0
+
+        # event.eachより区切り時間でeachした方が良いかも。。
+        #
+        events << :eoe # end of event
         events.each do |event|
-          if event.start_time >= span
-            prev = span.__send__("prev_#{unit}")
+          span_time = Time.local(span.year, span.month, span.day, 0, 0, 0)
+         
+          # eventの最後か
+          # イベント開始時間 > 区切り開始時間の場合、それまでの合計を出力
+          if event == :eoe || event.start_time >= span_time
+            prev = date_at(:prev, unit, span)
             day = span - prev
             puts sprintf("%s to %s % 6.1fh (% 5.1fh )  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
             puts sprintf("         % 6.1fh             %s", d, "*" * d.to_i) if d > 0
-            while event.start_time >= span
-              span = span.__send__("next_#{unit}")
-            end
+
+            next if event == :eoe
+            
+            # イベントのある週/月まで区切り開始時間を進める
+            # event.start_time < span_time となる直前の値
+            n_span = span = date_at(:next, unit, span)
+            begin
+              span = n_span
+              n_span = date_at(:next, unit, span)
+              span_time = Time.local(n_span.year, n_span.month, n_span.day, 0, 0, 0)
+            end while event.start_time > span_time
+
             sum = 0
             d = 0
           end
+
           sum = sum + event.duration_by_hour
           
           # daylight check
