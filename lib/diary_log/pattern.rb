@@ -8,6 +8,7 @@ module DiaryLog
       params[:s] = Regexp.new(params[:s]) if !params[:s].nil?
       params[:e] = Regexp.new(params[:e]) if !params[:e].nil?
       params[:a] = Regexp.new(params[:a]) if !params[:a].nil?
+      params[:m] = Regexp.new(params[:m]) if !params[:m].nil?
       @params = params
     end
     def name
@@ -25,7 +26,9 @@ module DiaryLog
     end
     
     def detector
-      if !params[:s].nil? && !params[:e].nil?
+      if !params[:m].nil?
+        EventDetector::Match.new(self)
+      elsif !params[:s].nil? && !params[:e].nil?
         EventDetector::Ranged.new(self)
       elsif !params[:a].nil?
         EventDetector::AllDay.new(self)
@@ -49,6 +52,17 @@ module DiaryLog
           end
         end
         events
+      end
+
+      class Match < EventDetector
+        def match(r)
+          return nil if r.all_day
+          m = @pattern.params[:m].match(r.desc)
+          if m
+            event = Event.new(@pattern.name, r)
+            return event
+          end
+        end
       end
 
       class Ranged < EventDetector

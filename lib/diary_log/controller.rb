@@ -59,6 +59,12 @@ module DiaryLog
           if pattern.params[:s]
             rest.delete(event.start_record)
           end
+          if pattern.params[:m]
+            rest.delete(event.start_record)
+          end
+          if pattern.params[:a]
+            rest.delete(event.start_record)
+          end
         end
        
         # bug
