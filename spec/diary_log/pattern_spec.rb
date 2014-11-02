@@ -8,7 +8,8 @@ describe DiaryLog::Pattern do
       DiaryLog::Record.new(Date.new(2013, 1, 2), '*', 0, "今日は、ほげほげだ"),
       DiaryLog::Record.new(Date.new(2013, 1, 2), 3, 0, "開始"),
       DiaryLog::Record.new(Date.new(2012, 1, 2), 4, 30, "aaa"),
-      DiaryLog::Record.new(Date.new(2012, 1, 2), 6, 50, "終了")
+      DiaryLog::Record.new(Date.new(2012, 1, 2), 6, 50, "終了"),
+      DiaryLog::Record.new(Date.new(2012, 1, 2), 7, 0, "食事")
     ]
   end
   
@@ -64,6 +65,25 @@ describe DiaryLog::Pattern do
         expect(@events.size).to eq 1
         expect(@events.first.title).to eq '全日イベント'
         expect(@events.first.start_record.time_str).to eq '*'
+      end
+    end
+
+  end
+
+  context 'match detector' do
+    subject{
+      DiaryLog::Pattern.new({:m => '食', :name => '食事イベント'})
+    }
+    its(:name){ should eq '食事イベント'}
+
+    describe 'detect' do
+      before do
+        @events = subject.detect(@records)
+      end
+      it "detects one event" do
+        expect(@events.size).to eq 1
+        expect(@events.first.title).to eq '食事イベント'
+        expect(@events.first.start_record.time_str).to eq '07:00'
       end
     end
 
