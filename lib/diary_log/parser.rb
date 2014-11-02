@@ -26,6 +26,12 @@ module DiaryLog
       prev = nil
       
       a.reverse.each do |line|
+        
+        unless line.match(/^\*|^\d/)
+          # not log record or other text
+          next
+        end
+
         time, desc = line.split(' ', 2)
         hour, minute = time.split(':', 2)
         
