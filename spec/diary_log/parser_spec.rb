@@ -3,8 +3,44 @@
 require 'spec_helper'
 
 describe DiaryLog::Event do
-  
-  context '' do
+
+  context 'invalid date subject' do
+    it 'parse' do
+      source = <<EOS
+INVALID DATE
+EOS
+      expect{ DiaryLog::Parser.new.parse(source) }.to raise_error
+    end
+  end
+
+  context 'invalid order warning' do
+    it 'warning' do
+      source = <<EOS
+log 2013-01-22
+1 event1
+2 event2
+EOS
+      logger = mock('logger')
+      logger.should_receive(:warn).with(/20時間以上記録がありません/)
+      DiaryLog::Parser.new(logger: logger).parse(source)
+    end
+  end
+
+  context 'ignore case' do
+    subject{
+      source = <<EOS
+log 2013-01-22
+
+7
+6 
+- 関係ないテキスト
+EOS
+      DiaryLog::Parser.new.parse(source)
+    }
+    its(:size) { should be 0}
+  end
+
+  context 'default' do
     subject{
       source = <<EOS
 log 2013-01-22

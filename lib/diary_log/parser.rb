@@ -6,9 +6,12 @@ require "diary_log/record"
 module DiaryLog
   class Parser
     
-    def initialize()
+    def initialize(options = {})
+      if options[:logger]
+        @logger = options[:logger]
+      end
     end
-    
+
     def parse(source)
       records = []
       a = source.split(/\n/).map{|line| line.strip }.reject{|line| line.size == 0}
@@ -44,6 +47,11 @@ module DiaryLog
         
         if !prev.nil? && prev > r
           r.after_midnight!
+
+          # ちょっと開きすぎてる。間違いかも？
+          if (r.datetime - prev.datetime) > 20 * 3600
+            @logger.warn "20時間以上記録がありません: " + r.pretty_str
+          end
         end
         
         records << r

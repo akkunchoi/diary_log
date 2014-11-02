@@ -2,5 +2,6 @@
 /.bundle
 /nbproject
 /config.yml
+/coverage
 
 /tmp

@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+require 'logger'
+
 module DiaryLog
   class Controller
     def initialize(config)
       @config = config
+      @logger = Logger.new(STDOUT)
     end
     
     def build_records(options)
@@ -10,7 +13,7 @@ module DiaryLog
       day_end = options[:day_end]
       path = options[:path]
       
-      parser = DiaryLog::Parser.new
+      parser = DiaryLog::Parser.new(logger: @logger)
       
       records = []
       day = day_start
