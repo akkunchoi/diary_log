@@ -184,7 +184,7 @@ module DiaryLog
             prev = date_at(:prev, unit, span)
             day = span - prev
             puts sprintf("%s to %s % 6.1fh (% 5.1fh )  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
-            puts sprintf("         % 6.1fh             %s", d, "*" * d.to_i) if d > 0
+            puts sprintf("            -- daylight % 6.1fh             %s", d, "*" * d.to_i) if d > 0
 
             next if event == :eoe
             
@@ -203,7 +203,7 @@ module DiaryLog
 
           sum = sum + event.duration_by_hour
           
-          # daylight check
+          # daylight check（どんだけ日照時間に寝てるか）
           if name == 'sleep'
             st = event.start_time
             sunrise = st.change(:hour => 7, :min => 0, :sec => 0)

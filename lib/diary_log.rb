@@ -39,14 +39,14 @@ module DiaryLog
       require 'active_support'
       opt = OptionParser.new
 
-      opt.on('--gcal-insert') {|v| config[:gcal][:insert] = true }
+      opt.on('-i', '--gcal-insert') {|v| config[:gcal][:insert] = true }
       opt.on('--gcal-insert-dry-run') {|v| config[:gcal][:insert_dry_run] = true}
       opt.on('--day-ago NUM') {|v| config[:period][:day_ago] = v }
-      opt.on('--show-rests') {|v| config[:show_rests] = true}
-      opt.on('--show-records') {|v| config[:show_records] = true}
-      opt.on('--show-events') {|v| config[:show_events] = true}
-      opt.on('--analyze') {|v| config[:analyze] = true}
-      opt.on('--last-week [WEEK]') do |v| 
+      opt.on('-t', '--show-rests') {|v| config[:show_rests] = true}
+      opt.on('-i', '--show-records') {|v| config[:show_records] = true}
+      opt.on('-e', '--show-events') {|v| config[:show_events] = true}
+      opt.on('-a', '--analyze') {|v| config[:analyze] = true}
+      opt.on('-l', '--last-week [WEEK]') do |v| 
         v = 1 if v.nil? || v == ""
         v = Integer(v)
 
@@ -60,12 +60,12 @@ module DiaryLog
         config[:period][:day_since] = s.strftime("%Y-%m-%d")
         config[:period][:day_until] = e.strftime("%Y-%m-%d")
       end
-      opt.on('--since SINCE') do |v| 
+      opt.on('-s', '--since SINCE') do |v| 
         # TODO validation
         config[:period][:day_ago] = nil
         config[:period][:day_since] = v
       end
-      opt.on('--until UNTIL') do |v| 
+      opt.on('-u', '--until UNTIL') do |v| 
         # TODO validation
         config[:period][:day_ago] = nil
         config[:period][:day_until] = v
