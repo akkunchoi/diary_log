@@ -45,7 +45,15 @@ module DiaryLog
       opt.on('-t', '--show-rests') {|v| config[:show_rests] = true}
       opt.on('-i', '--show-records') {|v| config[:show_records] = true}
       opt.on('-e', '--show-events') {|v| config[:show_events] = true}
-      opt.on('-a', '--analyze') {|v| config[:analyze] = true}
+      opt.on('-a', '--analyze') {|v| 
+        config[:analyze] = true
+        config[:show_events] = false
+      }
+      opt.on('--output-json') {|v|
+        config[:output_json] = true
+        config[:show_records] = false
+        config[:show_events] = false
+      }
       opt.on('-l', '--last-week [WEEK]') do |v| 
         v = 1 if v.nil? || v == ""
         v = Integer(v)

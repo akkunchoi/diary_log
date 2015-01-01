@@ -5,7 +5,7 @@ module DiaryLog
   class Controller
     def initialize(config)
       @config = config
-      @logger = Logger.new(STDOUT)
+      @logger = Logger.new(STDERR)
     end
     
     def build_records(options)
@@ -43,7 +43,10 @@ module DiaryLog
     def run
       
       day_option = input
-      puts "#{day_option[:day_start]} to #{day_option[:day_end]}"
+
+      unless @config[:output_json]
+        puts "#{day_option[:day_start]} to #{day_option[:day_end]}"
+      end
       
       records = build_records(day_option)
 
@@ -73,7 +76,7 @@ module DiaryLog
         # bug
        #next if events.size == 0
 
-        unless @config[:analyze]
+        if @config[:show_events]
           show_events(pattern, events)
         end
         
@@ -81,7 +84,7 @@ module DiaryLog
           insert_into_gcal(pattern, events)
         end
         
-        if @config[:analyze]
+        if @config[:analyze] || @config[:output_json]
           analyze_events(pattern, events)
         end
         
@@ -94,7 +97,11 @@ module DiaryLog
       if @config[:show_rests] 
         show_rest_records(rest)
       end
-      
+
+      if @config[:output_json]
+        output_events
+      end
+
     end
     
     def show_events(pattern, events)
@@ -233,6 +240,9 @@ module DiaryLog
       )
     end
     
+    def output_events
+      puts "DiaryLog = {data: " + @events.to_json + "};"
+    end
     
     protected
     def input

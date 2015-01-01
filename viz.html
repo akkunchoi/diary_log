@@ -1,0 +1,77 @@
+<html>
+<head>
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script type="text/javascript" src="./data.js"></script>
+<script type="text/javascript">
+
+google.load("visualization", "1.1", {packages:["calendar"]});
+google.setOnLoadCallback(drawChart);
+
+
+function drawChart() {
+  var tpl = $('.calendar-template');
+  for (var category in DiaryLog.data){
+    var element = tpl.clone();
+    tpl.after(element);
+    element.removeClass('calendar-template').addClass('calendar');
+
+    var data = DiaryLog.data[category];
+    var dataTable = new google.visualization.DataTable();
+    dataTable.addColumn({ type: 'date', id: 'Date' });
+    dataTable.addColumn({ type: 'number', id: 'Hours' });
+
+    // 1日の合計をカウントしないといけない
+    var rows = data.map(function(event){
+        var sr = event.start_record;
+        var er = event.end_record;
+       
+        if(sr && er){
+          var s = moment(sr.date).hours(sr.hour).minutes(sr.minute);
+          var e = moment(er.date).hours(er.hour).minutes(er.minute);
+          if (s && e){
+            return [moment(sr.date).toDate(), e.subtract(s).hours()];
+          }
+          return null;
+        } else if (sr){
+          return [moment(sr.date).toDate(), 24];
+        }
+    });
+    rows = _.filter(rows, function(r){
+      return !!r;
+    });
+    dataTable.addRows(rows);
+
+    var chart = new google.visualization.Calendar(element.get(0));
+    var options = {
+      title: category,
+      height: 350,
+      colorAxis: {
+        minValue: 0,  
+        maxValue: 12,
+        colors: ['#FFFFFF', '#9999FF']
+      },
+      calendar: {
+        cellColor: {
+          stroke: '#76a7fa',
+          strokeOpacity: 0.5,
+          strokeWidth: 1,
+        },
+        focusedCellColor: {
+          stroke: '#d3362d',
+          strokeOpacity: 1,
+          strokeWidth: 1,
+        }
+      }
+    };
+    chart.draw(dataTable, options);
+  }
+}
+    </script>
+  </head>
+  <body>
+    <div class="calendar-template" style="width: 1000px; height: 350px;"></div>
+  </body>
+</html>
