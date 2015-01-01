@@ -166,6 +166,8 @@ module DiaryLog
         puts ""
 #        puts "#{events.size} events."
         
+        event_sum = 0
+
         #区切り開始日
         span = input[:day_start]
         span = date_at(:beginning_of, unit, span)
@@ -202,6 +204,7 @@ module DiaryLog
           end
 
           sum = sum + event.duration_by_hour
+          event_sum = event_sum + event.duration_by_hour
           
           # daylight check（どんだけ日照時間に寝てるか）
           if name == 'sleep'
@@ -216,7 +219,11 @@ module DiaryLog
               d = d + ((sunset - st)/3600)
             end
           end
+          
+
         end
+        puts sprintf("event sum %d h", event_sum)
+
       end
     end
     
