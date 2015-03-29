@@ -241,7 +241,12 @@ module DiaryLog
     end
     
     def output_events
-      puts "DiaryLog = {data: " + @events.to_json + "};"
+      obj = {
+        :config => @config,
+        :data => @events
+      }
+      puts "DiaryLog = " + obj.to_json
+      # puts "DiaryLog = {data: " + @events.to_json + "};"
     end
     
     protected
