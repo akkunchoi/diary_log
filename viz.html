@@ -1,30 +1,54 @@
 <html>
 <head>
-<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+<script type="text/javascript" src="js/moment.min.js"></script>
+<script type="text/javascript" src="js/lodash.min.js"></script>
+<script src="js/d3.v3.min.js"></script>
+<link href="js/cal-heatmap.css" rel="stylesheet" media="all" />
+<script src="js/cal-heatmap.js"></script>
+<script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="js/angular.min.js"></script>
 <script type="text/javascript" src="./data.js"></script>
 <script type="text/javascript">
 
-google.load("visualization", "1.1", {packages:["calendar"]});
-google.setOnLoadCallback(drawChart);
+// google.load("visualization", "1.1", {packages:["calendar"]});
+/*
+  // google.visualization.Calendar
+  var chart;
+  var chartOptions = {
+    title: '',
+    height: 350,
+    colorAxis: {
+      minValue: 0,  
+      maxValue: 12,
+      colors: ['#FFFFFF', '#9999FF']
+    },
+    calendar: {
+      cellColor: {
+        stroke: '#76a7fa',
+        strokeOpacity: 0.5,
+        strokeWidth: 1,
+      },
+      focusedCellColor: {
+        stroke: '#d3362d',
+        strokeOpacity: 1,
+        strokeWidth: 1,
+      }
+    }
+  };
 
-
-function drawChart() {
-  var tpl = $('.calendar-template');
-  for (var category in DiaryLog.data){
-    var element = tpl.clone();
-    tpl.after(element);
-    element.removeClass('calendar-template').addClass('calendar');
-
-    var data = DiaryLog.data[category];
+  function draw(scope){
+    if (!scope.entries){
+      return;
+    }
+    if (!chart){
+      return;
+    }
     var dataTable = new google.visualization.DataTable();
     dataTable.addColumn({ type: 'date', id: 'Date' });
     dataTable.addColumn({ type: 'number', id: 'Hours' });
 
     // 1日の合計をカウントしないといけない
-    var rows = data.map(function(event){
+    var rows = scope.entries.map(function(event){
         var sr = event.start_record;
         var er = event.end_record;
        
@@ -42,36 +66,147 @@ function drawChart() {
     rows = _.filter(rows, function(r){
       return !!r;
     });
-    dataTable.addRows(rows);
-
-    var chart = new google.visualization.Calendar(element.get(0));
-    var options = {
-      title: category,
-      height: 350,
-      colorAxis: {
-        minValue: 0,  
-        maxValue: 12,
-        colors: ['#FFFFFF', '#9999FF']
-      },
-      calendar: {
-        cellColor: {
-          stroke: '#76a7fa',
-          strokeOpacity: 0.5,
-          strokeWidth: 1,
-        },
-        focusedCellColor: {
-          stroke: '#d3362d',
-          strokeOpacity: 1,
-          strokeWidth: 1,
+    if (scope.condition){
+      var condition = scope.condition;
+      rows = _.filter(rows, function(r){
+        if (condition && condition.year){
+          return r[0].getFullYear() === condition.year;
         }
-      }
-    };
-    chart.draw(dataTable, options);
+        return true;
+      });
+    }
+    dataTable.addRows(rows);
+    console.log(chartOptions);
+    chart.draw(dataTable, chartOptions);
   }
-}
+*/
+
+angular.module('DiaryLog', [])
+.service('DiaryLogService', function(){
+  var data = DiaryLog.data;
+
+  var obj = {
+    each: function(callback){
+      for (var category in data){
+        var rows = DiaryLog.data[category];
+        _.each(rows, function(row){
+          callback(category, row);
+        });
+      }
+    },
+    data: function(){
+      return data;
+    }
+  }
+  return obj;
+})
+.directive('viz', function(DiaryLogService){
+  return {
+    controller: function($scope){
+      $scope.graphData = {};
+      $scope.heatmapOptions = {
+        // start: new Date(new Date().getFullYear(), 0),
+        start: new Date(2015, 0, 1),
+        range : 12,
+        domain : "month",
+        subDomain : "day",
+        scale: [1,2,3,4,5],
+        displayScale: false,
+        onClick: function(date, count) {
+          alert("Oh gosh, " + count + " things occured on " + date.toISOString());
+        }
+      };
+
+      for (var category in DiaryLogService.data()){
+        $scope.graphData[category] = [];
+      }
+      this.query = function(options){
+        $scope.heatmapOptions.start = new Date(options.year, 0);
+        $scope.condition = options;
+        $scope.graphData = DiaryLogService.data();
+      }
+    }
+  }
+})
+.directive('years', function(DiaryLogService){
+  return {
+    require: '^viz',
+    template: '<div ng-repeat="year in years"><button ng-click="query({year: year})">{{year}}</button></div>',
+    link: function(scope, element, attrs, viz){
+      scope.query = viz.query;
+    },
+    controller: function($scope){
+      var years = {}
+      DiaryLogService.each(function(category, row){
+        var sr = row.start_record;
+        var y = moment(sr.date).year();
+        years[y] = true;
+      });
+      $scope.years = _.keys(years);
+    }
+  }
+})
+.directive('heatmap', function(){
+  var counter = 0;
+  return {
+    template: '<div id="identity"></div>',
+    scope: {
+      entries: '=',
+      options: '='
+    },
+    link: function(scope, element, attrs){
+      // initialize element
+      var identity = 'hm' + (++counter);
+      element.find('div').attr('id', identity);
+
+      var options = _.assign(
+        {itemSelector: '#' + identity}, 
+        scope.options
+      );
+
+      var calendar = new CalHeatMap();
+      calendar.init(options);
+
+      scope.$watch('entries', function(entries){
+        var data = {};
+        _.each(entries, function(e){
+          var key = moment(e.start_record.date).toDate().getTime()/1000|0 + "";
+          var value = 0;
+
+          var sr = e.start_record;
+          var er = e.end_record;
+          if(sr && er){
+            var s = moment(sr.date).hours(sr.hour).minutes(sr.minute);
+            var e = moment(er.date).hours(er.hour).minutes(er.minute);
+            if (s && e){
+              value = e.subtract(s).hours();
+            }
+          } else if (sr){
+            value = 24;
+          }
+
+          data[key] = value;
+        });
+        var opt = _.assign(options, {
+          data: data
+        });
+        calendar.update(data);
+      });
+    }
+  }
+})
+;
+
     </script>
   </head>
-  <body>
-    <div class="calendar-template" style="width: 1000px; height: 350px;"></div>
+  <body ng-app="DiaryLog">
+    <viz>
+      <years></years>
+      <div ng-repeat="(name, entries) in graphData">
+        <h1>{{name}}</h1>
+        <heatmap entries="entries" options="heatmapOptions"></heatmap>
+      </div>
+    </viz>
   </body>
 </html>
+
