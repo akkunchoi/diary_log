@@ -58,7 +58,33 @@ module DiaryLog
       rest = records.clone
 
       patterns.each do |pattern|
-        events = pattern.detect(records)
+
+        # 日照時間の睡眠計算する
+        # daylight=trueのイベントのみ、v:sunrise/v:sunsetという仮想レコードを追加する
+        if pattern.params[:daylight]
+          sunriseOption = {:hour => 7, :min => 0, :sec => 0}
+          sunsetOption = {:hour => 19, :min => 0, :sec => 0}
+          # sunrise/sunset仮想レコードを追加
+          new_records = []
+          prev_record = nil
+          records.each do |record|
+            sunrise = record.datetime.change(sunriseOption)
+            sunset = record.datetime.change(sunsetOption)
+            if !prev_record.nil?
+              if prev_record.datetime < sunrise && sunrise < record.datetime
+                new_records << Record.new(sunrise, sunrise.hour, sunrise.min, "v:sunrise")
+              end
+              if prev_record.datetime < sunset && sunset < record.datetime
+                new_records << Record.new(sunset, sunset.hour, sunset.min, "v:sunset")
+              end
+            end
+            prev_record = record
+            new_records << record
+          end
+          events = pattern.detect(new_records)
+        else
+          events = pattern.detect(records)
+        end
 
         events.each do |event|
           rest.delete(event.end_record)
@@ -192,8 +218,8 @@ module DiaryLog
           if event == :eoe || event.start_time >= span_time
             prev = date_at(:prev, unit, span)
             day = span - prev
-            puts sprintf("%s to %s % 6.1fh (% 5.1fh )  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
-            puts sprintf("            -- daylight % 6.1fh             %s", d, "*" * d.to_i) if d > 0
+            puts sprintf("%s to %s % 6.1fh/w (% 5.1fh/d)  %s", prev, span - 1, sum, sum/day, "*" * (sum/day).to_i) if sum > 0
+            # puts sprintf("            -- daylight % 6.1fh             %s", d, "*" * d.to_i) if d > 0
 
             next if event == :eoe
             
@@ -213,21 +239,6 @@ module DiaryLog
           sum = sum + event.duration_by_hour
           event_sum = event_sum + event.duration_by_hour
           
-          # daylight check（どんだけ日照時間に寝てるか）
-          if name == 'sleep'
-            st = event.start_time
-            sunrise = st.change(:hour => 7, :min => 0, :sec => 0)
-            et = event.end_time
-            sunset = st.change(:hour => 19, :min => 0, :sec => 0)
-            if st <= sunrise && sunrise <= et
-              d = d + ((et - sunrise)/3600)
-            end
-            if st <= sunset && sunset <= et
-              d = d + ((sunset - st)/3600)
-            end
-          end
-          
-
         end
         puts sprintf("event sum %d h", event_sum)
 
