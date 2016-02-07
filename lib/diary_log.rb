@@ -62,8 +62,13 @@ module DiaryLog
         v.times do
           base = base.prev_week
         end
-        s = base - 1 # sunday start
-        e = base + 6  # this sunday
+        if config[:start_day_of_week] == :sunday
+          s = base - 1
+          e = base + 6  # this sunday
+        else
+          s = base
+          e = base + 7 # this monday
+        end 
         config[:period][:day_ago] = nil
         config[:period][:day_since] = s.strftime("%Y-%m-%d")
         config[:period][:day_until] = e.strftime("%Y-%m-%d")
