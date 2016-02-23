@@ -58,12 +58,22 @@ module DiaryLog
       rest = records.clone
 
       patterns.each do |pattern|
+        
+        sunriseOption = {:hour => 7, :min => 0, :sec => 0}
+        sunsetOption = {:hour => 19, :min => 0, :sec => 0}
 
         # 日照時間の睡眠計算する
         # daylight=trueのイベントのみ、v:sunrise/v:sunsetという仮想レコードを追加する
+        # 
+        # sunrise - sleep   * wake    - sunset
+        # sunrise - sleep   * sunset  - wake
+        # sunrise * wake    - sleep   * sunset
+        # sunrise * wake    - sunset  - sleep
+        # sleep   - sunrise * wake    - sunset
+        # sleep   - sunrise * sunset  - wake
+        # sunset  - sleep   - wake    - sunrise
+        # 
         if pattern.params[:daylight]
-          sunriseOption = {:hour => 7, :min => 0, :sec => 0}
-          sunsetOption = {:hour => 19, :min => 0, :sec => 0}
           # sunrise/sunset仮想レコードを追加
           new_records = []
           prev_record = nil
@@ -82,6 +92,19 @@ module DiaryLog
             new_records << record
           end
           events = pattern.detect(new_records)
+          
+          events = events.reject do |event|
+            sleep_time = event.start_record.datetime
+            sunset = sleep_time.change(sunsetOption)
+            # 直近のsunset時間を求めたい
+            if sunset > sleep_time
+              sunset = sunset - 86400
+            end
+            wake_time = event.end_record.datetime
+            sunrise = wake_time.change(sunriseOption)
+            
+            sunset <= sleep_time && wake_time <= sunrise 
+          end
         else
           events = pattern.detect(records)
         end
