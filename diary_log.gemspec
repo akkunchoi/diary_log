@@ -7,11 +7,11 @@ $:.push File.expand_path("../lib", __FILE__)
 Gem::Specification.new do |s|
   s.name        = "diary_log"
   s.version     = "0.0.1"
-  s.authors     = ["TODO: Your name"]
-  s.email       = ["TODO: Your email"]
-  s.homepage    = "TODO"
-  s.summary     = "TODO: Summary of RakutenClient."
-  s.description = "TODO: Description of RakutenClient."
+  s.authors     = ["Akiyoshi Tanaka"]
+  s.email       = ["akkunchoi@gmail.com"]
+  s.homepage    = ""
+  s.summary     = "diary_log summary"
+  s.description = "diary_log description"
 
 #  s.files = Dir["{app,config,db,lib}/**/*"] + ["MIT-LICENSE", "Rakefile", "README.rdoc"]
 #  s.test_files = Dir["test/**/*"]
